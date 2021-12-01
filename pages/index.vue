@@ -110,11 +110,17 @@ button {
 }
 
 .oya {
-  width: 100%;
+  width: 50%;
   height: 100px;
   display: flex;
   justify-content: center;  
   margin-top: 1rem;
+}
+
+@media screen and (max-width: 760px) {
+  .oya {
+    width: 100%;
+  }
 }
 
 .message {
