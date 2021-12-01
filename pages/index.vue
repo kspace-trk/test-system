@@ -4,7 +4,7 @@
       <div class="welcome-title">名前を入力してください</div>
       <input type="text" v-model="name">
       <button class="start-btn" @click="start()">はじめる</button>
-      <div v-if="isError" class="error">名前を入力してください</div>
+      <div v-if="isError" class="error">{{ errorMessage }}</div>
     </div>
     <div v-if="isStart" class="btn-wrapper">
       <div class="oya">
@@ -14,65 +14,81 @@
       <button class="btn btn--green btn--cubic" @click="normal()">普通</button>
       </div>
     </div>
-    <div class="message-area">
-      <div v-if="isSend" class="message">送信しました</div>
+    <div v-if="isStart" class="oya">
+      <button class="result" @click="sendResult()">集計を終了する</button>
     </div>
+    <div v-if="isSend" class="message">送信しています...</div>
   </div>
 </template>
 
 <script>
 export default {
+  async asyncData ({ app }) {
+    const res = await app.$axios.get('https://hirota-lab.microcms.io/api/v1/data?limit=1000', {
+      headers: {
+        'X-MICROCMS-API-KEY': '842b109162ba4f8680ca4fbde4e2a7c3079c'
+      }
+    })
+    const dataList = res.data.contents
+
+    // 同じ日に同じ名前で登録されるのを防ぐために、今日登録された人の名前をリスト化しておく
+    const todayList = dataList.filter(x => x.day === app.$dayjs().format('MM月DD日'))
+    const alreadyNameList = []
+    todayList.forEach((elem) => {
+      alreadyNameList.push(elem.name)
+    })
+
+    return { alreadyNameList }
+  },
   data () {
     return {
       isSend: false,
       name: '',
       isStart: false,
-      isError: false
+      isError: false,
+      exciteList: [],
+      normalList: [],
+      errorMessage: '名前を入力してください'
     }
   },
   methods: {
-    async excite () {
-      await this.$axios.$post('https://hirota-lab.microcms.io/api/v1/excite', {
-        date: this.$dayjs().format('MM月DD日 HH:mm:ss'),
-        name: this.name
-      }, {
-        headers: {
-          'Content-Type': 'application/json',
-          'X-MICROCMS-API-KEY': '842b109162ba4f8680ca4fbde4e2a7c3079c'
-        }
-      }).then(() => {
-        this.send()
-        }).catch(() => {
-          alert('エラーが発生しました')
-        })
+    excite () {
+      this.exciteList.push(this.$dayjs().format('HH:mm:ss'))
     },
-    async normal () {
-            await this.$axios.$post('https://hirota-lab.microcms.io/api/v1/normal', {
-        date: this.$dayjs().format('MM月DD日 HH:mm:ss'),
-        name: this.name
-      }, {
-        headers: {
-          'Content-Type': 'application/json',
-          'X-MICROCMS-API-KEY': '842b109162ba4f8680ca4fbde4e2a7c3079c'
-        }
-      }).then(() => {
-        this.send()
-        }).catch(() => {
-          alert('エラーが発生しました')
-        })
+    normal () {
+      this.normalList.push(this.$dayjs().format('HH:mm:ss'))
     },
-    send () {
+    async sendResult () {
       this.isSend = true
-      setTimeout(() => {
-        this.isSend = false
-      }, 1500)
+      await this.$axios.$post('https://hirota-lab.microcms.io/api/v1/data', {
+        exciteDataList: JSON.stringify(this.exciteList),
+        normalDataList: JSON.stringify(this.normalList),
+        day: this.$dayjs().format('MM月DD日'),
+        name: this.name
+      }, {
+        headers: {
+          'Content-Type': 'application/json',
+          'X-MICROCMS-API-KEY': '842b109162ba4f8680ca4fbde4e2a7c3079c'
+        }
+      }).then(() => {
+          alert('集計が完了しました。')
+          location.reload()
+        }).catch(() => {
+          alert('エラーが発生しました。')
+        })
     },
     start () {
       if (this.name) {
-        this.isError = false
-        this.isStart = true
+        if (this.alreadyNameList.includes(this.name)) {
+          this.errorMessage = 'こちらの名前は本日すでに終了しています。\n他の名前でお試しください。'
+          this.isError = true      
+        } else {
+          this.isError = false
+          this.isStart = true
+        }
       } else {
-        this.isError = true
+        this.errorMessage = '名前を入力してください'
+        this.isError = true        
       }
       
     }
@@ -96,7 +112,7 @@ export default {
   display: flex;
   align-items: center;
   justify-content: space-around;
-  margin-top: 50px;
+  margin-top: 100px;
 }
 
 @media screen and (max-width: 760px) {
@@ -222,8 +238,11 @@ input {
 }
 
 .error {
+  width: 80%;
+  text-align: center;
   font-size: 0.8rem;
   color: #f54848;
+  margin-top: 0.5rem;
 }
 
 .message-area {
@@ -231,5 +250,11 @@ input {
   height: 50px;
   display: flex;
   justify-content: center;
+}
+
+.result {
+  padding: 0 1rem;
+  height: 40px;
+  margin-top: 40px;
 }
 </style>
