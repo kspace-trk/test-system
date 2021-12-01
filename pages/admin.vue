@@ -94,12 +94,17 @@ export default {
       this.exciteData.reverse()
       this.normalData = JSON.parse(this.allFilterdData[0].normalDataList).slice()
       this.normalData.reverse()
+    },
+    init () {
+      this.allFilterdData = []
+      this.exciteData = []
+      this.normalData = []
     }
   },
   watch: {
     selectedDay () {
       this.filterdBySelectedDayData = this.dataList.filter(x => x.day === this.selectedDay)
-      console.log(this.filterdBySelectedDayData)
+      this.init()
     },
     selectedName () {
       this.allFilterdData = this.filterdBySelectedDayData.filter(x => x.name === this.selectedName)
