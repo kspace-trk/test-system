@@ -2,12 +2,14 @@
   <div class="admin">
     <div class="result-wrapper">
       <div class="title">盛り上がっている</div>
+      <button class="download" @click="downloadExciteList()">csvダウンロード</button>
       <div v-for="elem in exciteList" :key="elem.id" class="result">
         {{ elem.date }}
       </div>
     </div>
     <div class="result-wrapper">
       <div class="title">普通</div>
+      <button class="download" @click="downloadNormalList()">csvダウンロード</button>
       <div v-for="elem in normalList" :key="elem.id" class="result">
         {{ elem.date }}
       </div>
@@ -40,6 +42,30 @@ export default {
       normalList = values[1].data.contents;
     });
     return { exciteList: exciteList, normalList: normalList }
+  },
+  methods: {
+    downloadExciteList () {
+      let output = '\ufeff'
+      this.exciteList.forEach((elem) => {
+        output += elem.date + ','
+      })
+      let blob = new Blob([output], { type: 'text/csv' })
+      let link = document.createElement('a')
+      link.href = window.URL.createObjectURL(blob)
+      link.download = 'Result.csv'
+      link.click()
+    },
+    downloadNormalList () {
+      let output = '\ufeff'
+      this.normalList.forEach((elem) => {
+        output += elem.date + ','
+      })
+      let blob = new Blob([output], { type: 'text/csv' })
+      let link = document.createElement('a')
+      link.href = window.URL.createObjectURL(blob)
+      link.download = 'Result.csv'
+      link.click()
+    }
   }
 }
 </script>
@@ -56,5 +82,14 @@ export default {
 .title {
   display: inline-block;
   border-bottom: 2px solid #e7e7e7;
+}
+
+.result-wrapper {
+  display: flex;
+  flex-direction: column;
+}
+
+.download {
+  margin: 1rem 0;
 }
 </style>
